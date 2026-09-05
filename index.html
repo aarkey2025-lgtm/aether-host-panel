@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aether Host | Control Panel</title>
+    <link rel="stylesheet" href="https://cloudflare.com">
+    <style>
+        :root {
+            --bg-deep: #08080c; --bg-sidebar: #0d0d14; --bg-card: #12121a;
+            --bg-input: #171724; --accent-purple: #7c4dff; --accent-darkpurple: #512da8;
+            --accent-green: #00e676; --accent-red: #ff3366; --text-main: #ffffff;
+            --text-muted: #71718a; --border-color: #1b1b26;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background-color: var(--bg-deep); color: var(--text-main); 
+            display: flex; height: 100vh; width: 100vw; overflow: hidden; 
+        }
+        
+        /* 1. SIDEBAR CONTAINER FRAME */
+        .sidebar { 
+            width: 250px; min-width: 250px; background-color: var(--bg-sidebar); 
+            border-right: 1px solid var(--border-color); display: flex; 
+            flex-direction: column; justify-content: space-between; padding-bottom: 20px; 
+        }
+        .logo-area { padding: 25px 24px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-color); letter-spacing: 0.5px; }
+        .logo-area span { color: var(--accent-purple); }
+        .sidebar-menu { list-style: none; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+        .menu-item { padding: 12px 14px; color: var(--text-muted); display: flex; align-items: center; gap: 14px; cursor: pointer; font-size: 14px; font-weight: 600; border-radius: 8px; transition: 0.2s; }
+        .menu-item:hover, .menu-item.active { color: var(--text-main); background-color: rgba(124,77,255,0.08); }
+        .menu-item.active { color: var(--text-main); background-color: rgba(124,77,255,0.15); border-left: 3px solid var(--accent-purple); }
+        
+        /* 2. MAIN APP FRAME WITH OVERFLOW PREVENTION */
+        .workspace { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; width: 100%; }
+        .top-navbar { height: 70px; min-height: 70px; background-color: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        .search-container { background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 14px; width: 280px; display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 14px; }
+        .search-container input { background: none; border: none; color: #fff; outline: none; width: 100%; }
+        .user-avatar-badge { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; }
+        .user-avatar-badge img { width: 34px; height: 34px; border-radius: 8px; border: 2px solid var(--accent-purple); }
+
+        /* 3. MULTI-PANEL VIEW MODULE CONTAINER */
+        .tab-panel { padding: 30px; overflow-y: auto; flex-grow: 1; display: none; min-width: 0; width: 100%; }
+        .tab-panel.active { display: block; }
+        .page-header { font-size: 24px; font-weight: 700; }
+        .page-subtitle { color: var(--text-muted); margin-bottom: 25px; font-size: 13px; }
+
+        /* 4. FLEX ACCENT TILES BAR */
+        .stat-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; width: 100%; }
+        .stat-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px 20px; flex: 1; min-width: 160px; display: flex; align-items: center; gap: 15px; }
+        .stat-icon { width: 42px; height: 42px; border-radius: 8px; background: rgba(124,77,255,0.08); color: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .stat-val { font-size: 18px; font-weight: 700; margin-top: 2px; }
+        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* 5. MULTI-COLUMN INTERFACE LAYOUT WRAPPER */
+        .dashboard-layout { display: flex; flex-wrap: wrap; gap: 20px; width: 100%; }
+        .left-column { flex: 2; min-width: 300px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        .right-column { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 20px; }
+        .widget-box { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; width: 100%; min-width: 0; word-wrap: break-word; }
+
+        /* 6. CONSOLE SCROLL TERMINAL BLOCK */
+        .console-terminal { background-color: #050508; border-radius: 8px; height: 320px; padding: 15px; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.5; overflow-y: auto; border: 1px solid var(--border-color); color: #fff; white-space: pre-wrap; word-break: break-all; }
+        .input-bar { display: flex; gap: 10px; margin-top: 15px; width: 100%; }
+        .input-bar input { background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; color: #fff; flex-grow: 1; min-width: 0; outline: none; }
+
+        .btn-ui { background-color: var(--accent-purple); border: none; color: #fff; font-weight: 700; padding: 10px 20px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; transition: 0.2s; white-space: nowrap; }
+        .btn-ui:hover { filter: brightness(1.2); }
+        .btn-stop { background-color: var(--accent-red); }
+
+        .form-group { margin-bottom: 15px; width: 100%; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; color: var(--text-muted); font-size: 13px; }
+        input, select, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: #fff; outline: none; box-sizing: border-box; }
+
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 8px; }
+        .data-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 400px; }
+        .data-table th { padding: 10px; color: var(--text-muted); font-size: 12px; border-bottom: 1px solid var(--border-color); background-color: rgba(0,0,0,0.1); }
+        .data-table td { padding: 12px 10px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+        .status-badge { background: rgba(0,230,118,0.1); color: var(--accent-green); padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
+
+        /* RESPONSIVE LAYOUT FOR MOBILE PHONE PREVIEWS */
+        @media (max-width: 768px) {
+            body { flex-direction: column; overflow-y: auto; height: auto; }
+            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .sidebar-menu { display: flex; flex-wrap: wrap; padding: 10px; }
+            .menu-item { padding: 10px; border-left: none !important; }
+            .top-navbar { padding: 0 15px; }
+            .main-workspace { height: auto; overflow: visible; }
+            .dashboard-layout { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- LEFT SIDEBAR CONTAINER -->
+    <aside class="sidebar">
+        <div>
+            <div class="logo-area"><i class="fa-solid fa-bolt"></i> AETHER <span>HOST</span></div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active" onclick="changePanel('console')"><i class="fa-solid fa-terminal"></i> Console</li>
+                <li class="menu-item" onclick="changePanel('players')"><i class="fa-solid fa-users"></i> Players</li>
+                <li class="menu-item" onclick="changePanel('mods')"><i class="fa-solid fa-cube"></i> Mods</li>
+                <li class="menu-item" onclick="changePanel('plugins')"><i class="fa-solid fa-puzzle-piece"></i> Plugins</li>
+                <li class="menu-item" onclick="changePanel('world')"><i class="fa-solid fa-earth-americas"></i> World</li>
+                <li class="menu-item" onclick="changePanel('settings')"><i class="fa-solid fa-sliders"></i> Settings</li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- RIGHT ACTION CENTER WORKSPACE -->
+    <main class="workspace">
+        <header class="top-navbar">
+            <div class="search-container"><i class="fa-solid fa-search"></i> <input type="text" placeholder="Search variables... Ctrl /"></div>
+            <div class="user-avatar-badge"><img src="https://imgur.com" alt="Avatar"> AetherUser</div>
+        </header>
+
+        <!-- TAB SECTION 1: TRIPLE COLUMN CONTROL SHORE [rtFspG] -->
+        <div id="panel-console" class="tab-panel active">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;">
+                <div>
+                    <h1 class="page-header">AETHER HOST</h1>
+                    <p style="color: var(--text-muted); font-size: 13px;">High Performance System Cloud Deployment Node Sandbox.</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-ui" style="background: var(--bg-card); border: 1px solid var(--border-color);" onclick="sendCommandDirect('restart')"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                    <button class="btn-ui" onclick="startServer()"><i class="fa-solid fa-play"></i> Start Engine</button>
+                    <button class="btn-ui btn-stop" onclick="stopServer()"><i class="fa-solid fa-power-off"></i> Collapse</button>
+                </div>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(255, 51, 102, 0.1); color: var(--accent-red);" id="statusIndicatorIcon"><i class="fa-solid fa-circle"></i></div>
+                    <div><div class="stat-label">System Engine</div><div class="stat-val" id="statStatus" style="color: var(--accent-red);">Offline</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                    <div><div class="stat-label">Online Players</div><div class="stat-val" id="statPlayers">0 / 20</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-memory"></i></div>
+                    <div><div class="stat-label">RAM Metric</div><div class="stat-val" id="statRam">0% / 4 GB</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
+                    <div><div class="stat-label">CPU Performance</div><div class="stat-val" id="statCpu">0 %</div></div>
+                </div>
+            </div>
+
+            <div class="dashboard-layout">
+                <div class="left-column">
+                    <div class="widget-box" style="background-color: #050508;">
+                        <div class="console-terminal" id="terminalBox">Aether Host shell pipeline waiting for deployment initialization cycles...</div>
+                        <div class="input-bar">
+                            <input type="text" id="cmdInput" placeholder="Execute console command instructions (e.g. op name)...">
+                            <button class="btn-ui" onclick="sendCommand()"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="right-column">
+                    <div class="widget-box">
+                        <div style="font-weight: 700; font-size: 13px; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase;"><i class="fa-solid fa-circle-info"></i> Connection Info</div>
+                        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                            <div>IP Route <span style="float: right; font-weight: 700;" id="infoIp">Inactive</span></div>
+                            <div>Binding Port <span style="float: right; font-weight: 700;" id="infoPort">Inactive</span></div>
+                            <div>Loader Core <span style="float: right; font-weight: 700; color: var(--accent-purple);" id="infoType">PaperMC</span></div>
+                        </div>
+                    </div>
+                    <div class="widget-box">
+                        <div style="font-weight: 700; font-size: 13px; margin-bottom: 10px; color: var(--text-muted); text-transform: uppercase;"><i class="fa-solid fa-hard-drive"></i> Disk Capacity</div>
+                        <div style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">0.0 <span style="font-size: 12px; color: var(--text-muted);">/ 10 GB</span></div>
+                        <div style="width: 100%; height: 5px; background-color: var(--bg-input); border-radius: 10px; overflow: hidden;"><div style="width: 2%; height: 100%; background-color: var(--accent-purple);"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB SECTION 2: PLAYERS CONTAINER [Uw-8cx] -->
+        <div id="panel-players" class="tab-panel">
+            <h1 class="page-header">Players Control</h1>
+            <p class="page-subtitle">Moderate access permissions arrays cleanly.</p>
+            <div class="widget-box">
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                    
+                    <button class="btn-ui" onclick="executeOp('op')">Op Player</button>
+                    <button class="btn-ui btn-stop" onclick="executeOp('deop')">De-Op</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>Active Profile Name</th><th>Authentication Check</th></tr></thead>
+                        <tbody id="playerTableBody"><tr><td colspan="2" style="color: var(--text-muted)">No active players detected.</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB SECTION 3: MODS MATRIX [Mhjlqp] -->
+        <div id="panel-mods" class="tab-panel">
+            <h1 class="page-header">Mods Center</h1>
+            <div class="widget-box">
+                <div class="form-group"><label>Mod Library Script Destination (.jar link)</label><input type="text" placeholder="https://url-link-to-modpack/mod.jar"></div>
+                <button class="btn-ui">Deploy Mod Resource</button>
+            </div>
+        </div>
+
+        <!-- TAB SECTION 4: PLUGINS CORE HUB [0ak6dC] -->
+        <div id="panel-plugins" class="tab-panel">
+            <h1 class="page-header">Plugins core Hub</h1>
+            <div class="widget-box">
+                <div class="form-group"><label>Direct extension file location URL (.jar format)</label><input type="text" id="plugField" placeholder="e.g. https://url-source-code/plugin.jar"></div>
+                <button class="btn-ui" onclick="alert('Plugin mapped successfully!')">Queue Plugin</button>
+            </div>
+        </div>
+
+        <!-- TAB SECTION 5: WORLD RESETS [p_f8ea] -->
+        <div id="panel-world" class="tab-panel">
+            <h1 class="page-header">World Data Configuration</h1>
+            <div class="widget-box"><button class="btn-ui btn-stop" onclick="alert('World Purged.')">Purge & Clear World Map</button></div>
+        </div>
+
+        <!-- TAB SECTION 6: PROPERTY SETUP SETTINGS [iBoOlq] -->
+        <div id="panel-settings" class="tab-panel">
+            <h1 class="page-header">System Global Settings</h1>
+            <div class="widget-box">
+                <div class="form-group"><label>Server Display Name</label><input type="text" id="cfgName" value="ApexPixel"></div>
+                <div class="form-group"><label>Network Allocation Port</label><input type="number" id="cfgPort" value="25565"></div>
+                <div class="form-group"><label>RAM Memory Size</label><select id="cfgRam"><option value="2G">2 Gigabytes</option><option value="4G" selected>4 Gigabytes</option></select></div>
+                <div class="form-group"><label>Minecraft Version Base</label><input type="text" id="cfgVersion" value="LATEST"></div>
+                <div class="form-group"><label>Software Runtime Loader</label><select id="cfgType"><option value="PAPER">PaperMC</option><option value="FABRIC">Fabric</option></select></div>
+                <div class="form-group"><label>Account Verification Mode</label><select id="cfgOnline"><option value="true">Online (Premium)</option><option value="false" selected>Offline (Cracked)</option></select></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let serverName = "ApexPixel";
+        function changePanel(id) {
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById(`panel-${id}`).classList.add('active');
+        }
+        async function startServer() {
+            serverName = document.getElementById('cfgName').value;
+            const port = document.getElementById('cfgPort').value;
+            document.getElementById('terminalBox').innerHTML = "Initializing Docker container orchestration pipelines...";
+            
+            const res = await fetch('/create-server', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    name: serverName, port: port, ram: document.getElementById('cfgRam').value,
+                    version: document.getElementById('cfgVersion').value, type: document.getElementById('cfgType').value,
+                    plugins: document.getElementById('plugField').value, onlineMode: document.getElementById('cfgOnline').value
+                })
+            });
+            const d = await res.json();
+            if(d.success) {
+                document.getElementById('statStatus').innerHTML = "Online";
+                document.getElementById('statStatus').style.color = "var(--accent-green)";
+                document.getElementById('statusIndicatorIcon').style.color = "var(--accent-green)";
+                document.getElementById('infoIp').innerHTML = "localhost";
+                document.getElementById('infoPort').innerHTML = port;
+                document.getElementById('statCpu').innerHTML = "12 %";
+                document.getElementById('statRam').innerHTML = "1.8 / 4 GB";
+            }
+        }
+        async function stopServer() {
+            await fetch('/stop-server', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: serverName }) });
+            document.getElementById('statStatus').innerHTML = "Offline";
+            document.getElementById('statStatus').style.color = "var(--accent-red)";
+            document.getElementById('statusIndicatorIcon').style.color = "var(--accent-red)";
+            document.getElementById('statCpu').innerHTML = "0 %";
+            document.getElementById('statRam').innerHTML = "0% / 4 GB";
+        }
+        async function sendCommand() {
+            const i = document.getElementById('cmdInput');
+            const res = await fetch('/send-command', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: serverName, cmd: i.value }) });
+            const d = await res.json();
+            document.getElementById('terminalBox').innerHTML += `\n> ${i.value}\n${d.reply}`;
+            i.value = "";
+            const t = document.getElementById('terminalBox'); t.scrollTop = t.scrollHeight;
+        }
+        async function sendCommandDirect(cmdStr) {
+            await fetch('/send-command', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: serverName, cmd: cmdStr }) });
+            alert(`Packet forwarded: ${cmdStr}`);
+        }
+        async function executeOp(action) {
+            const u = document.getElementById('opUser').value;
+            await fetch('/send-command', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: serverName, cmd: `${action} ${u}` }) });
+            alert(`Done!`);
+        }
+        setInterval(async () => {
+            if(document.getElementById('statStatus').innerHTML === "Online") {
+                const lRes = await fetch(`/get-logs?name=${serverName}`); const lData = await lRes.json();
+                if(lData.logs) { document.getElementById('terminalBox').innerHTML = lData.logs.replace(/\n/g, "<br>"); }
+                const pRes = await fetch(`/list-players?name=${serverName}`); const pData = await pRes.json();
+                document.getElementById('statPlayers').innerHTML = `${pData.online} / ${pData.max}`;
+                const tbody = document.getElementById('playerTableBody');
+                if(!pData.list || pData.list.length === 0) { tbody.innerHTML = `<tr><td colspan="2" style="color:var(--text-muted)">No active players connected.</td></tr>`; }
+                else { tbody.innerHTML = ""; pData.list.forEach(p => { tbody.innerHTML += `<tr><td><b>${p}</b></td><td><span class="status-badge">Active</span></td></tr>`; }); }
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
