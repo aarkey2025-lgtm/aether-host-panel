@@ -2,20 +2,27 @@ const express = require('express');
 const { exec } = require('child_process');
 const path = require('path');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
+// FORCE FIX: Tells Render exactly where to find your files on its cloud hard drive
+const ROOT_DIR = path.resolve(__dirname);
+app.use(express.static(ROOT_DIR));
+
+// Direct landing route to serve your index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(ROOT_DIR, 'index.html'));
+});
+
+// Deploy server endpoint
 app.post('/create-server', (req, res) => {
     const r = req.body;
     const online = r.onlineMode === "true" ? "TRUE" : "FALSE";
     const cmd = `docker run -d --name ${r.name || "ApexPixel"} -p ${r.port || "25565"}:25565 -e EULA=TRUE -e ONLINE_MODE=${online} -e TYPE=${r.type || "PAPER"} -e VERSION=${r.version || "LATEST"} -e MEMORY=${r.ram || "4G"} -e SILENT_RCON=true --restart always itzg/minecraft-server`;
 
     exec(cmd, (err) => {
-        if (err) {
-            exec关键 (`docker start ${req.body.name || "ApexPixel"}`);
-        }
+        if (err) exec(`docker start ${r.name || "ApexPixel"}`);
         res.json({ success: true });
     });
 });
@@ -40,7 +47,7 @@ app.get('/list-players', (req, res) => {
     exec(`docker exec ${req.query.name || "ApexPixel"} rcon-cli list`, (err, stdout) => {
         if (err) return res.json({ online: 0, max: 20, list: [] });
         const m = stdout.match(/There are (\d+) of a max (\d+) players online: (.*)/);
-        if (m) return res.json({ online: parseInt(m[1]), max: parseInt(m[2]), list: m[3].split(', ').filter(Boolean) });
+        if (m) return res.json({ online: parseInt(m), max: parseInt(m), list: m.split(', ').filter(Boolean) });
         res.json({ online: 0, max: 20, list: [] });
     });
 });
