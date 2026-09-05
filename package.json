@@ -1,21 +1,14 @@
 {
-  "name": "mchoster",
+  "name": "aether-host-panel",
   "version": "1.0.0",
-  "description": "",
+  "description": "Premium Minecraft Hosting Panel App Engine Layout",
   "main": "server.js",
   "scripts": {
-  "start": "node server.js"
-}
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@capacitor/cli": "^8.5.1",
-    "@capacitor/core": "^8.5.1",
-    "express": "^5.2.1"
-  }
+    "express": "^4.19.2"
+  },
+  "author": "",
+  "license": "ISC"
 }
